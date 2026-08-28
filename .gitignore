@@ -11,6 +11,10 @@ output/
 # Node
 node_modules/
 
+# Repo-local Agent Skills installation output
+# The installed third-party skill is reproducible from skills-lock.json.
+.agents/
+
 # Local release artifacts
 release/
 
