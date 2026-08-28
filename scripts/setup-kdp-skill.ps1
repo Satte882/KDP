@@ -9,11 +9,18 @@ if (-not (Get-Command npx -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Installing/updating joshyattridge/amazon-kdp-skill..."
-npx skills add joshyattridge/amazon-kdp-skill
+& npx.cmd skills add joshyattridge/amazon-kdp-skill
 
 if ($LASTEXITCODE -ne 0) {
     throw "amazon-kdp-skill installation failed with exit code $LASTEXITCODE."
 }
 
-Write-Host "amazon-kdp-skill installation completed."
-Write-Host "Next step: let the agent check the KDP session. Amazon login/MFA must be completed by the user in the visible browser window when requested."
+Write-Host "Applying tested local hardening..."
+& (Join-Path $PSScriptRoot "harden-kdp-skill.ps1")
+if ($LASTEXITCODE -ne 0) {
+    throw "amazon-kdp-skill hardening failed with exit code $LASTEXITCODE."
+}
+
+Write-Host "amazon-kdp-skill installation and hardening completed."
+Write-Host "Recommended read-only verification: .\scripts\kdp-smoke.ps1"
+Write-Host "Amazon login/MFA must be completed by the user in the visible browser window when explicitly started later."
