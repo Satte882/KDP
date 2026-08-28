@@ -1,0 +1,38 @@
+name: KDP skill smoke
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/kdp-smoke.ps1"
+      - ".github/workflows/kdp-skill-smoke.yml"
+      - "skills-lock.json"
+
+jobs:
+  windows-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout wrapper repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Checkout upstream KDP skill into repo-local skill path
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
+          git clone --depth 1 https://github.com/joshyattridge/amazon-kdp-skill.git ".agents\skills\amazon-kdp"
+
+      - name: Install upstream dependencies without browser download
+        shell: pwsh
+        working-directory: .agents/skills/amazon-kdp
+        run: npm ci --ignore-scripts
+
+      - name: Run read-only Windows smoke test
+        shell: pwsh
+        run: .\scripts\kdp-smoke.ps1
