@@ -1,0 +1,20 @@
+# Amazon KDP local session / credentials
+.kdp-session/
+.env
+.env.*
+!.env.example
+
+# Reports and local exports
+output/
+*.xlsx
+
+# Node
+node_modules/
+
+# Local release artifacts
+release/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
