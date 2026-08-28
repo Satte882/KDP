@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "amazon-kdp": {
+      "source": "joshyattridge/amazon-kdp-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "ba20dc3684f7203570defc39a0373edaa46e4327765bb1913076d6f35269533f"
+    }
+  }
+}
