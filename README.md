@@ -91,6 +91,16 @@ Alternativ direkt:
 npx skills add joshyattridge/amazon-kdp-skill
 ```
 
+Die aktuelle Skills-CLI installiert den Skill repo-lokal unter:
+
+```text
+.agents/skills/amazon-kdp/
+```
+
+`.agents/` ist generierter Installationsoutput und wird **nicht** versioniert. Die von der Skills-CLI erzeugte `skills-lock.json` soll dagegen im Repository bleiben, sofern sie ausschließlich Skill-Quelle/Version/Hash und keine Secrets enthält. Sie dient der reproduzierbaren Abhängigkeit auf den externen KDP-Skill.
+
+Nach einer erstmaligen Skill-Installation kann ein bereits laufender Coding-Agent den neuen Skill unter Umständen erst in einem **neuen Turn bzw. einer neu geladenen Agent-Session** erkennen.
+
 Beim ersten Zugriff auf KDP muss der Benutzer den Amazon-Login inklusive MFA selbst durchführen. Session-Cookies dürfen niemals in Git eingecheckt werden.
 
 ## Geplanter Release-Ablauf
@@ -175,6 +185,7 @@ Kernprinzipien:
 - Keine Session-Cookies oder Amazon-Zugangsdaten im Repository.
 - Kein Live-Publish ohne explizite menschliche Freigabe.
 - Bei unerwarteten KDP-Dialogen, Preisabweichungen oder Preview-Problemen stoppen statt raten.
+- `npm audit fix --force` oder vergleichbare invasive Dependency-Upgrades niemals automatisch ausführen; Schwachstellen zuerst bewerten.
 
 ## Repository-Struktur
 
@@ -183,10 +194,15 @@ KDP/
   README.md
   AGENTS.md
   .gitignore
+  skills-lock.json           # nach lokaler Skill-Installation versionieren
   scripts/
     setup-kdp-skill.ps1
   templates/
     kdp-release.example.json
+
+  .agents/                   # lokal generiert, gitignored
+    skills/
+      amazon-kdp/
 ```
 
 Später können Build-/Validierungs-Skripte ergänzt werden, ohne den KDP-Adapter selbst in dieses Repository zu kopieren.
