@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "scripts/kdp-smoke.ps1"
+      - "scripts/harden-kdp-skill.ps1"
       - ".github/workflows/kdp-skill-smoke.yml"
       - "skills-lock.json"
 
@@ -32,6 +33,23 @@ jobs:
         shell: pwsh
         working-directory: .agents/skills/amazon-kdp
         run: npm ci --ignore-scripts
+
+      - name: Apply local hardening
+        shell: pwsh
+        run: .\scripts\harden-kdp-skill.ps1
+
+      - name: Verify core publish scope error is removed
+        shell: pwsh
+        working-directory: .agents/skills/amazon-kdp
+        run: |
+          $diagnostics = (& npx tsc --noEmit 2>&1 | Out-String)
+          Write-Host $diagnostics
+          if ($diagnostics -match 'server/src/kdpPublish\.ts.*saveResult') {
+            Write-Error "Core kdpPublish.ts saveResult diagnostic remains after hardening."
+            exit 1
+          }
+          Write-Host "Core publish saveResult scope diagnostic removed."
+          exit 0
 
       - name: Run read-only Windows smoke test
         shell: pwsh
