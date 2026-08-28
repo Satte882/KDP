@@ -1,0 +1,37 @@
+{
+  "format": "paperback",
+  "create": true,
+  "dryRun": true,
+  "publish": false,
+  "details": {
+    "title": "BUCHTITEL",
+    "subtitle": "OPTIONALER UNTERTITEL",
+    "description": "Buchbeschreibung für Amazon KDP.",
+    "language": "German",
+    "isAdultContent": false,
+    "primaryAuthor": {
+      "firstName": "VORNAME",
+      "lastName": "NACHNAME"
+    },
+    "keywords": [
+      "keyword eins",
+      "keyword zwei"
+    ]
+  },
+  "categories": [
+    {
+      "path": [
+        "KATEGORIE",
+        "UNTERKATEGORIE"
+      ]
+    }
+  ],
+  "content": {
+    "interiorPath": "C:/ABSOLUTER/PFAD/release/print.pdf",
+    "coverPath": "C:/ABSOLUTER/PFAD/release/cover.pdf"
+  },
+  "pricing": {
+    "listPriceUsd": "9.99",
+    "territory": "worldwide"
+  }
+}
