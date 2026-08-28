@@ -103,6 +103,33 @@ Nach einer erstmaligen Skill-Installation kann ein bereits laufender Coding-Agen
 
 Beim ersten Zugriff auf KDP muss der Benutzer den Amazon-Login inklusive MFA selbst durchführen. Session-Cookies dürfen niemals in Git eingecheckt werden.
 
+## Windows-Smoke-Test
+
+Der Upstream-CLI-Wrapper verwendet standardmäßig `http://localhost:3001`. Auf Windows kann Node `fetch` je nach lokaler Namensauflösung über IPv6 gehen, obwohl der lokal erreichbare KDP-Endpunkt über IPv4 funktioniert.
+
+Dieses Repository verwendet deshalb für lokale Windows-Aufrufe explizit:
+
+```powershell
+$env:KDP_API_URL = "http://127.0.0.1:3001"
+```
+
+Der Read-only-Smoke-Test ist:
+
+```powershell
+./scripts/kdp-smoke.ps1
+```
+
+Er prüft:
+
+1. lokalen KDP-Server starten, falls nötig;
+2. `GET /api/kdp/health`;
+3. `GET /api/kdp/status`;
+4. den Upstream-Befehl `npm run status` mit explizitem IPv4-Endpunkt.
+
+Der Test führt **keinen Login und keine KDP-Schreiboperation** durch. Ein Ergebnis `connected: false` ist vor dem ersten Login korrekt.
+
+Zusätzlich führt `.github/workflows/kdp-skill-smoke.yml` denselben Integrationsweg auf `windows-latest` ohne Amazon-Login aus.
+
 ## Geplanter Release-Ablauf
 
 ### Phase 1 - Build
@@ -175,7 +202,7 @@ Erst danach darf eine explizite Live-Publish-Anweisung erfolgen.
 
 ## Sicherheits- und Governance-Regeln
 
-Die verbindlichen Agent-Regeln stehen in [`AGENTS.md`](AGENTS.md).
+Die verbindlichen Agent-Regeln stehen in [`AGENTS.md`](AGENTS.md). Ergänzende Security-Hinweise stehen in [`docs/SECURITY.md`](docs/SECURITY.md).
 
 Kernprinzipien:
 
@@ -187,6 +214,17 @@ Kernprinzipien:
 - Bei unerwarteten KDP-Dialogen, Preisabweichungen oder Preview-Problemen stoppen statt raten.
 - `npm audit fix --force` oder vergleichbare invasive Dependency-Upgrades niemals automatisch ausführen; Schwachstellen zuerst bewerten.
 
+### Bekannte `xlsx`-Schwachstelle
+
+Der Upstream-Skill deklariert derzeit `xlsx@^0.18.5`. Diese Version ist von bekannten High-Severity-Advisories betroffen. Die gepflegten SheetJS-Releases werden inzwischen über den offiziellen SheetJS-CDN statt über das npm-Registry verteilt.
+
+Für dieses Repository gilt deshalb vorerst:
+
+- keine unbekannten oder fremden `.xlsx`-Dateien mit dem Skill parsen;
+- Report-Parsing nur für direkt aus Amazon KDP stammende bzw. ausdrücklich vertrauenswürdige Dateien;
+- Publishing selbst ist dadurch nicht blockiert;
+- ein Upgrade auf SheetJS >= 0.20.2 wird erst nach Kompatibilitätstest in den Setup-Prozess aufgenommen.
+
 ## Repository-Struktur
 
 ```text
@@ -194,11 +232,17 @@ KDP/
   README.md
   AGENTS.md
   .gitignore
-  skills-lock.json           # nach lokaler Skill-Installation versionieren
+  skills-lock.json
+  docs/
+    SECURITY.md
   scripts/
     setup-kdp-skill.ps1
+    kdp-smoke.ps1
   templates/
     kdp-release.example.json
+  .github/
+    workflows/
+      kdp-skill-smoke.yml
 
   .agents/                   # lokal generiert, gitignored
     skills/
