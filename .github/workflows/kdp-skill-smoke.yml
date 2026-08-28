@@ -89,6 +89,7 @@ jobs:
             exit 1
           }
           Write-Host "TypeScript diagnostics unchanged from upstream baseline."
+          exit 0
 
       - name: Parser compatibility smoke test
         shell: pwsh
