@@ -36,3 +36,66 @@ jobs:
       - name: Run read-only Windows smoke test
         shell: pwsh
         run: .\scripts\kdp-smoke.ps1
+
+  sheetjs-compat:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout upstream KDP skill
+        shell: pwsh
+        run: git clone --depth 1 https://github.com/joshyattridge/amazon-kdp-skill.git upstream
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install upstream dependencies without browser download
+        shell: pwsh
+        working-directory: upstream
+        run: npm ci --ignore-scripts
+
+      - name: Replace vulnerable npm SheetJS with official 0.20.3 package
+        shell: pwsh
+        working-directory: upstream
+        run: npm install --ignore-scripts --save-exact https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+
+      - name: TypeScript compatibility check
+        shell: pwsh
+        working-directory: upstream
+        run: npx tsc --noEmit
+
+      - name: Parser compatibility smoke test
+        shell: pwsh
+        working-directory: upstream
+        run: |
+          @'
+          import * as XLSX from 'xlsx'
+          import { parseKdpXlsxBuffer } from './lib/parseKdpWorkbook.ts'
+
+          const wb = XLSX.utils.book_new()
+          const ws = XLSX.utils.aoa_to_sheet([
+            ['Book Title', 'Royalty', 'Net Units Sold', 'Marketplace', 'ASIN', 'Currency', 'Royalty Date'],
+            ['Compatibility Test', 1.23, 1, 'Amazon.de', 'TESTASIN001', 'EUR', '2026-08-01'],
+          ])
+          XLSX.utils.book_append_sheet(wb, ws, 'Combined Sales')
+
+          const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+          const result = parseKdpXlsxBuffer(arrayBuffer)
+
+          if (result.rows.length !== 1) {
+            throw new Error(`Expected 1 parsed row, got ${result.rows.length}`)
+          }
+          if (result.rows[0]?.title !== 'Compatibility Test') {
+            throw new Error(`Unexpected parsed title: ${result.rows[0]?.title}`)
+          }
+          console.log('SheetJS 0.20.3 parser compatibility: OK')
+          '@ | Set-Content -Encoding UTF8 compat-test.ts
+          npx tsx compat-test.ts
+
+      - name: Production dependency audit after SheetJS upgrade
+        shell: pwsh
+        working-directory: upstream
+        run: npm audit --omit=dev
