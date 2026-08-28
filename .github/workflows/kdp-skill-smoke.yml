@@ -56,15 +56,39 @@ jobs:
         working-directory: upstream
         run: npm ci --ignore-scripts
 
+      - name: Capture upstream TypeScript baseline
+        shell: pwsh
+        working-directory: upstream
+        run: |
+          $output = (& npx tsc --noEmit 2>&1 | Out-String).Trim()
+          Set-Content -Encoding UTF8 baseline-tsc.txt $output
+          Write-Host $output
+          Write-Host "Baseline exit code: $LASTEXITCODE"
+          exit 0
+
       - name: Replace vulnerable npm SheetJS with official 0.20.3 package
         shell: pwsh
         working-directory: upstream
         run: npm install --ignore-scripts --save-exact https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
 
-      - name: TypeScript compatibility check
+      - name: Verify SheetJS upgrade introduces no new TypeScript errors
         shell: pwsh
         working-directory: upstream
-        run: npx tsc --noEmit
+        run: |
+          $upgraded = (& npx tsc --noEmit 2>&1 | Out-String).Trim()
+          Set-Content -Encoding UTF8 upgraded-tsc.txt $upgraded
+          Write-Host $upgraded
+
+          $baseline = (Get-Content baseline-tsc.txt -Raw).Trim()
+          if ($baseline -ne $upgraded) {
+            Write-Error "TypeScript diagnostics changed after the SheetJS upgrade."
+            Write-Host "--- BASELINE ---"
+            Write-Host $baseline
+            Write-Host "--- UPGRADED ---"
+            Write-Host $upgraded
+            exit 1
+          }
+          Write-Host "TypeScript diagnostics unchanged from upstream baseline."
 
       - name: Parser compatibility smoke test
         shell: pwsh
