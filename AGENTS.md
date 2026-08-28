@@ -12,20 +12,51 @@ Verwende für KDP-Interaktionen:
 
 - `joshyattridge/amazon-kdp-skill`
 - Upstream: https://github.com/joshyattridge/amazon-kdp-skill
+- lokale Installation: `.agents/skills/amazon-kdp`
 
 Der Skill wird separat installiert. Fremdcode nicht ungeprüft in dieses Repository kopieren.
+
+## Windows / lokaler API-Endpunkt
+
+Auf Windows ist für lokale CLI-Aufrufe dieses Repositories `127.0.0.1` statt `localhost` zu verwenden, um mögliche IPv4-/IPv6-Auflösungsunterschiede von Node `fetch` zu vermeiden.
+
+Vor Upstream-CLI-Aufrufen:
+
+```powershell
+$env:KDP_API_URL = "http://127.0.0.1:3001"
+```
+
+Für einen ungefährlichen Read-only-Test steht zur Verfügung:
+
+```powershell
+./scripts/kdp-smoke.ps1
+```
+
+Der Smoke-Test darf den lokalen Server starten, prüft `/api/kdp/health`, `/api/kdp/status` und `npm run status`, führt aber weder Login noch KDP-Schreiboperationen aus.
 
 ## Pflichtablauf
 
 1. Prüfe, ob der KDP Skill installiert und funktionsfähig ist.
 2. Prüfe die KDP-Session vor jedem Read-/Write-Workflow.
-3. Falls Login notwendig ist, öffne den vorgesehenen sichtbaren Browser-Login und lasse den Benutzer Amazon-Login/MFA selbst durchführen.
-4. Validiere Release-Dateien und Metadaten vor KDP-Schreibzugriffen.
-5. Führe schreibende Aktionen zuerst als Dry-run aus.
-6. Verarbeite immer nur ein Buch bzw. einen Write-Workflow gleichzeitig.
-7. Verifiziere Änderungen nach dem Schreiben durch erneutes Auslesen, soweit der Skill dies unterstützt.
-8. Stoppe vor einem Live-Publish.
-9. Ein Live-Publish ist nur nach einer expliziten Benutzeranweisung zulässig, die sich auf das konkrete Buch/Release bezieht.
+3. Unter Windows `KDP_API_URL=http://127.0.0.1:3001` für lokale Upstream-CLI-Aufrufe setzen.
+4. Falls Login notwendig ist, öffne den vorgesehenen sichtbaren Browser-Login und lasse den Benutzer Amazon-Login/MFA selbst durchführen.
+5. Validiere Release-Dateien und Metadaten vor KDP-Schreibzugriffen.
+6. Führe schreibende Aktionen zuerst als Dry-run aus.
+7. Verarbeite immer nur ein Buch bzw. einen Write-Workflow gleichzeitig.
+8. Verifiziere Änderungen nach dem Schreiben durch erneutes Auslesen, soweit der Skill dies unterstützt.
+9. Stoppe vor einem Live-Publish.
+10. Ein Live-Publish ist nur nach einer expliziten Benutzeranweisung zulässig, die sich auf das konkrete Buch/Release bezieht.
+
+## `xlsx`-Sicherheitsregel
+
+Der aktuell installierte Upstream-Skill verwendet `xlsx@0.18.5`, für das bekannte High-Severity-Advisories existieren. Bis ein kompatibilitätsgeprüftes Upstream-Update vorliegt:
+
+- keine beliebigen oder fremden `.xlsx`-Dateien mit dem Skill parsen;
+- Report-Parsing nur für direkt von Amazon KDP heruntergeladene oder ausdrücklich vertrauenswürdige Dateien;
+- kein `npm audit fix --force`;
+- kein lokaler Dependency-Patch ohne Kompatibilitätstest.
+
+Details: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Verboten
 
