@@ -50,10 +50,23 @@ if ($alreadyFixed) {
     Write-Host "Publish saveResult scope fix already present; no source patch needed."
 }
 elseif ($hasBrokenDeclaration -and $hasBrokenUse) {
-    $declarationPattern = '(?s)(if \(!dryRun && \(hasMetadata\(request\.details\) \|\| request\.categories\?\.length\)\) \{\s*try \{\s*)(if \(hasMetadata\(request\.details\)\) \{\s*)const saveResult = await saveDetailsOnPage\('
-    $declarationReplacement = '$1let saveResult: Awaited<ReturnType<typeof saveDetailsOnPage>> | undefined`r`n        $2saveResult = await saveDetailsOnPage('
+    $declarationPattern = '(?s)(if \(!dryRun && \(hasMetadata\(request\.details\) \|\| request\.categories\?\.length\)\) \{\s*try \{)(\s*)(if \(hasMetadata\(request\.details\)\) \{\s*)const saveResult = await saveDetailsOnPage\('
+    $regex = [regex]::new($declarationPattern)
+    $patched = $regex.Replace(
+        $content,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param($match)
+            $newlineAndIndent = $match.Groups[2].Value
+            return $match.Groups[1].Value +
+                $newlineAndIndent +
+                'let saveResult: Awaited<ReturnType<typeof saveDetailsOnPage>> | undefined' +
+                $newlineAndIndent +
+                $match.Groups[3].Value +
+                'saveResult = await saveDetailsOnPage('
+        },
+        1
+    )
 
-    $patched = [regex]::Replace($content, $declarationPattern, $declarationReplacement, 1)
     if ($patched -eq $content) {
         throw "Expected upstream saveResult declaration pattern was not found. Refusing to patch unknown source."
     }
